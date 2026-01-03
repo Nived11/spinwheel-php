@@ -60,7 +60,7 @@ export const useSpin = () => {
         e?.response?.data?.msg || e?.message || "Something went wrong";
 
       if (errorMsg.toLowerCase().includes("already")) {
-        toast.error("You have already spun the wheel!", {
+        toast.error("You have already spin the wheel!", {
           duration: 3000,
           position: "top-center",
         });

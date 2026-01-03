@@ -12,16 +12,7 @@ class SpinController {
     private $userModel;
     private $spinModel;
     
-    // Prize distribution (same as your Node.js)
-    private $prizes = [
-        ['prize' => 'Better Luck Next Time', 'weight' => 74],
-        ['prize' => 'Pepsi 200ml', 'weight' => 10],
-        ['prize' => '5% OFF', 'weight' => 5],
-        ['prize' => 'Watermelon Juice', 'weight' => 5],
-        ['prize' => 'Gift', 'weight' => 3],
-        ['prize' => '10% OFF', 'weight' => 2],
-        ['prize' => 'Free Full Mandi', 'weight' => 1]
-    ];
+    // ✅ REMOVED hardcoded prizes - will read from database instead
     
     public function __construct() {
         $database = new Database();
@@ -38,7 +29,7 @@ class SpinController {
         $phone = isset($data->phone) ? trim($data->phone) : '';
         $dobOrAnniversary = isset($data->dobOrAnniversary) ? trim($data->dobOrAnniversary) : '';
         
-        // Validations (same as your Node.js)
+        // Validations
         if (empty($name) || strlen($name) < 3) {
             Response::error('Name must be at least 3 characters');
         }
@@ -65,7 +56,7 @@ class SpinController {
             }
         }
         
-        // Generate UID (same format as Node.js)
+        // Generate UID
         $uid = 'EMP-' . strtoupper(substr(uniqid(), -6));
         
         // Create user
@@ -100,20 +91,42 @@ class SpinController {
         Response::json(['valid' => true], 200);
     }
     
-    // Weighted random prize selection (same logic as Node.js)
+    // ✅ NEW: Read prizes from database
+    private function getPrizesFromDB() {
+        try {
+            $query = "SELECT prize, weight FROM prize_config WHERE weight > 0 ORDER BY weight DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $prizes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($prizes)) {
+                // Fallback if database is empty
+                return [['prize' => 'Better Luck Next Time', 'weight' => 100]];
+            }
+            
+            return $prizes;
+        } catch (Exception $e) {
+            // Fallback on error
+            return [['prize' => 'Better Luck Next Time', 'weight' => 100]];
+        }
+    }
+    
+    // ✅ UPDATED: Weighted random prize selection - now uses database
     private function choosePrize() {
-        $total = array_sum(array_column($this->prizes, 'weight'));
+        $prizes = $this->getPrizesFromDB(); // Read from database
+        
+        $total = array_sum(array_column($prizes, 'weight'));
         $random = mt_rand(1, $total * 100) / 100;
         
         $sum = 0;
-        foreach ($this->prizes as $prize) {
+        foreach ($prizes as $prize) {
             $sum += $prize['weight'];
             if ($random <= $sum) {
                 return $prize;
             }
         }
         
-        return $this->prizes[0]; // Fallback
+        return $prizes[0]; // Fallback
     }
     
     // Spin wheel (POST /api/spin)
@@ -137,15 +150,15 @@ class SpinController {
             Response::error('Already spin');
         }
         
-        // Check position for 50th user special prize
+        // Check position for 100th user special prize
         $spinCount = $this->spinModel->count();
         $currentPosition = $spinCount + 1;
         
-        if ($currentPosition === 50) {
-            // Force "Free Full Mandi" for 50th user
-            $result = ['prize' => 'Free Full Mandi', 'weight' => 1];
+        if ($currentPosition === 100) {
+            // Force "Free Full Mandi" for 100th user
+            $result = ['prize' => 'Free Full Mandi', 'weight' => 0];
         } else {
-            // Regular weighted random
+            // Regular weighted random (reads from database)
             $result = $this->choosePrize();
         }
         

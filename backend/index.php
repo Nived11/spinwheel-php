@@ -20,10 +20,10 @@ require_once __DIR__ . '/routes/api.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Remove base path (for development in subdirectory)
-// Change '/spinwheel-php/backend' to your actual path
-$basePath = '/spinwheel-php/backend';
+// Remove base path for production
+$basePath = '/api';
 $uri = str_replace($basePath, '', $uri);
+
 
 // Route the request
 handleRequest($method, $uri);

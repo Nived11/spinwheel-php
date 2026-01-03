@@ -4,7 +4,7 @@
     RewriteEngine On
     
     # Set base directory (change if needed)
-    RewriteBase /spinwheel-php/backend/
+    RewriteBase /api/
     
     # Handle OPTIONS requests (CORS preflight)
     RewriteCond %{REQUEST_METHOD} OPTIONS

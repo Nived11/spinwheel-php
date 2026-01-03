@@ -1,44 +1,36 @@
-import { useState } from "react";
-import api from "../../utils/axios";
-import { Sparkles, Gift, Calendar, Phone, User, X, CheckCircle } from "lucide-react";
+import { Sparkles, Gift, Calendar, Phone, User, X, CheckCircle, AlertCircle } from "lucide-react";
+import TermsModal from "../../components/TermsModal";
+import { useRegisterForm } from "../../hooks/Users/useRegisterForm";
+
 
 const DemoForm = () => {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [dob, setDob] = useState("");
-  const [type, setType] = useState("birthday");
-  const [link, setLink] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showPopup, setShowPopup] = useState(false);
+   const {
+    name,
+    phone,
+    dob,
+    type,
+    link,
+    loading,
+    error,
+    showPopup,
+    showTerms,
+    agreedToTerms,
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setLink(null);
+    setName,
+    setPhone,
+    setDob,
+    setType,
+    setAgreedToTerms,
 
-    try {
-      const dobOrAnniversary = `${type}:${dob}`;
-      const res = await api.post("/create-uid", { name, phone, dobOrAnniversary });
-      setLink(res.data.link);
-      setShowPopup(true);
-    } catch (err: any) {
-      const msg = err?.response?.data?.msg || "Failed to create link";
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const closePopup = () => {
-    setShowPopup(false);
-    setLink(null);
-  };
-
+    handleSubmit,
+    openTermsModal,
+    handleTermsUnderstood,
+    handleTermsCancel,
+    closePopup,
+  } = useRegisterForm();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-0 sm:p-4 md:p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-2 sm:p-4 md:p-4">
       <div className="bg-white shadow-2xl rounded-3xl p-5 sm:p-8 w-full max-w-md relative overflow-hidden">
 
         <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500 rounded-full blur-3xl opacity-30 -z-10"></div>
@@ -46,7 +38,7 @@ const DemoForm = () => {
 
         <div className="text-center mb-8">
           <div className="inline-block relative">
-            <div className="relative bg-linear-to-br from-amber-800 via-amber-900 to-slate-700  p-4 rounded-full shadow-lg mb-4 inline-block">
+            <div className="relative bg-linear-to-br from-amber-800 via-amber-900 to-slate-700 p-4 rounded-full shadow-lg mb-4 inline-block">
               <Sparkles className="w-10 h-10 text-white animate-spin" style={{ animationDuration: '3s' }} />
             </div>
           </div>
@@ -57,11 +49,12 @@ const DemoForm = () => {
           </p>
         </div>
 
-        <div className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
           {error && (
-            <div className="bg-red-50 border border-red-300 text-sm sm:text-base text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-300 text-sm sm:text-base text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -70,7 +63,6 @@ const DemoForm = () => {
               <User className="w-4 h-4 text-amber-900" />
               Full Name
             </label>
-
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -89,6 +81,7 @@ const DemoForm = () => {
               Phone Number
             </label>
             <input
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               pattern="\d{10}"
@@ -101,7 +94,6 @@ const DemoForm = () => {
             />
           </div>
 
-          {/* UPDATED: Mobile → stacked (1 col), Desktop → 2 cols */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2 whitespace-nowrap">
@@ -112,7 +104,7 @@ const DemoForm = () => {
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl
-                         focus:ring-1focus:ring-amber-900 focus:border-amber-800
+                         focus:ring-1 focus:ring-amber-900 focus:border-amber-800
                          outline-none transition-all hover:border-gray-300 bg-white"
               >
                 <option value="birthday">🎂 Birthday</option>
@@ -131,16 +123,37 @@ const DemoForm = () => {
                 onChange={(e) => setDob(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl
-                         focus:ring-1focus:ring-amber-900 focus:border-amber-800
+                         focus:ring-1 focus:ring-amber-900 focus:border-amber-800
                          outline-none transition-all hover:border-gray-300"
               />
             </div>
           </div>
 
+          {/* NEW: Terms and Conditions Checkbox */}
+          <div className="flex items-start gap-3 p-2 ">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 w-4 h-4 text-amber-900 border-gray-300 rounded focus:ring-amber-900 cursor-pointer"
+            />
+            <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={openTermsModal}
+                className="cursor-pointer text-blue-600 hover:text-blue-800 underline font-medium"
+              >
+                Terms and Conditions
+              </button>
+            </label>
+          </div>
+
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={loading}
-            className="w-full bg-linear-to-br from-amber-800 via-amber-900 to-slate-900  text-white py-2.5 rounded-xl 
+            className="w-full bg-linear-to-br from-amber-800 via-amber-900 to-slate-900 text-white py-2.5 rounded-xl 
                      hover:bg-blue-700 transition-all disabled:opacity-50 
                      font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] 
                      active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
@@ -157,9 +170,17 @@ const DemoForm = () => {
               </>
             )}
           </button>
-        </div>
+        </form>
       </div>
 
+      {/* Terms Modal */}
+      <TermsModal
+        isOpen={showTerms}
+        onAccept={handleTermsUnderstood}
+        onCancel={handleTermsCancel}
+      />
+
+      {/* Success Popup */}
       {showPopup && link && (
         <div className="fixed inset-0 backdrop-blur-sm bg-transparent flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-scaleIn">
